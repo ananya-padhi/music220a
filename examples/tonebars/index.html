@@ -1,0 +1,218 @@
+<!doctype html>
+<html>
+
+<head>
+  <title>Examples - Tone Bars | Music220A@GitHub</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <script src="../../bower_components/webcomponentsjs/webcomponents-lite.min.js"></script>
+  <link rel="import" href="../../assets/music220a-header.html"></script>
+  <script src="fft.js"></script>
+</head>
+
+<body>
+
+  <div class="container">
+    <h1>Tone Bars</h1>
+
+    <p>Drag to change the tone by changing the magnitude of each sine wave.</p>
+
+    <paper-button raised onclick="setPreset(square)">SQUARE</paper-button>
+    <paper-button raised onclick="setPreset(sawtooth)">SAWTOOTH</paper-button>
+
+    <br><br>
+
+    <canvas id="spectrum" width="800" height="256"></canvas>
+    <canvas id="waveform" width="800" height="256"></canvas>
+
+  </div>
+
+  <script>
+    // Canvas
+    var width = 800, height = 256;
+    var ctxTimber = document.getElementById('spectrum').getContext('2d');
+    var ctxWaveform = document.getElementById('waveform').getContext('2d');
+
+    // FFT
+    var fftOrder = 10;
+    var fftLength = Math.pow(2, fftOrder);
+    var fftModule = new FFT(fftOrder);
+    var valuesR = new Float32Array(fftLength);
+    var valuesI = new Float32Array(fftLength);
+    var waveformR = new Float32Array(fftLength);
+    var waveformI = new Float32Array(fftLength);
+
+    // Calculation perfect frequency.
+    var sampleRate = 44100;
+    var binBandwidth = sampleRate / fftLength;
+    var factor = 3;
+    var fundamental = binBandwidth * factor;
+
+    // Timber Graph size. (half of FFT length)
+    var numTimbers = 16;
+    var timberValues = new Float32Array(numTimbers);
+
+    // AudioGraph.
+    var context, osc;
+
+
+    // Presets.
+    var square = [
+      -0.7458609973, 0, -0.4045956496, 0,
+      -0.003124921564,
+      0,
+      0.1719978058,
+      0,
+      0.08566228919,
+      0,
+      -0.06548291938,
+      0,
+      -0.09406600902,
+      0,
+      -0.003124294119,
+      0
+    ];
+
+    var sawtooth = [
+      -0.1864652493,
+      0.1511221035,
+      -0.1011489124,
+      0.04740424445,
+      -0.000781230391,
+      -0.03054757331,
+      0.04299945145,
+      -0.03807544617,
+      0.0214155723,
+      -0.0007811715658,
+      -0.01637072985,
+      0.02497523202,
+      -0.02351650226,
+      0.01398816411,
+      -0.0007810735297,
+      -0.0110527186
+    ];
+
+    // Func: init
+    function init() {
+
+      // Build audio graph.
+      context = new AudioContext();
+      osc = context.createOscillator();
+      osc.connect(context.destination);   
+      osc.start();
+      osc.frequency.value = fundamental;
+
+      // Mouse tracking.
+      var pressed = false;
+
+      ctxTimber.canvas.addEventListener('mousedown', function (event) {
+        pressed = true;
+        handleMouseMove(event);
+      });
+
+      ctxTimber.canvas.addEventListener('mousemove', function (event) {
+        if (pressed)
+          handleMouseMove(event);
+      });
+
+      ctxTimber.canvas.addEventListener('mouseup', function (event) {
+        pressed = false;  
+      });
+
+      drawTimberGraph();
+      drawWaveform();
+    }
+
+
+    // Func: drawTimerGraph
+    function drawTimberGraph() {
+      var padding = 2;
+      var yOrigin = height / 2;
+      var timberWidth = width / numTimbers;
+
+      // Clear canvas.
+      ctxTimber.fillStyle = '#eaeaea';
+      ctxTimber.fillRect(0, 0, width, height);
+
+      // Draw timbers.
+      ctxTimber.fillStyle = '#3a3a3a';
+      for (var i = 0; i < numTimbers; i++) {
+        var x = timberWidth * i;
+        var value = timberValues[i];
+        ctxTimber.fillRect(x + padding, yOrigin, timberWidth - padding * 2, yOrigin * -value);
+      }
+    }
+
+
+    function drawWaveform() {
+      var yOrigin = height / 2;
+      var xUnit = width / (waveformR.length * 0.5 - 1);
+
+      // Clear canvas.
+      ctxWaveform.fillStyle = '#eaeaea';
+      ctxWaveform.fillRect(0, 0, width, height);
+
+      ctxWaveform.strokeStyle = '#3a3a3a';
+      ctxWaveform.beginPath();
+      ctxWaveform.moveTo(0, yOrigin);
+      for (i = 0; i < waveformR.length * 0.5; i++) {
+        var amp = waveformR[i] * 0.5;
+        ctxWaveform.lineTo(i * xUnit, (1 - amp) * yOrigin);
+      }
+      ctxWaveform.stroke();
+    }
+
+
+    function handleMouseMove(event) {
+      var rect = ctxTimber.canvas.getBoundingClientRect();
+      var x = event.clientX - rect.left;
+      var y = event.clientY - rect.top;
+      var timberWidth = width / numTimbers;
+      var index = ~~(x / timberWidth);
+      var value = (y / height) * -2 + 1;
+
+      if (event.altKey){
+        timberValues[index] = 0.0;
+        valuesR[(index + 1) * factor] = 0.0;
+      } else {
+        timberValues[index] = value;
+        valuesR[(index + 1) * factor] = value;
+      }
+
+      var pw = context.createPeriodicWave(valuesR, valuesR, { disableNormalization: true });
+      osc.setPeriodicWave(pw);
+
+      valuesR[0] = 0.0;
+
+      fftModule.ifft(valuesR, valuesR, waveformR, waveformI);
+      fftModule.ifftScale(waveformR, waveformI);
+
+      drawTimberGraph();
+      drawWaveform();
+    }
+
+
+    function setPreset(preset) {
+      for (var i = 0; i < preset.length; i++) {
+        timberValues[i] = preset[i];
+        valuesR[(i + 1) * factor] = preset[i];
+      }
+
+      var pw = context.createPeriodicWave(valuesR, valuesR, { disableNormalization: true });
+      osc.setPeriodicWave(pw);
+
+      valuesR[0] = 0.0;
+
+      fftModule.ifft(valuesR, valuesR, waveformR, waveformI);
+      // fftModule.ifftScale(waveformR, waveformI);
+
+      drawTimberGraph();
+      drawWaveform();
+    }
+
+    init();
+  </script>
+</body>
+
+</html>

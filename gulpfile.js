@@ -37,7 +37,8 @@ gulp.task('dev', function () {
   gulp.watch([
     'assets/**/*',
     'assets/**/*',
-    'tutorials/**/*'
+    'tutorials/**/*',
+    'examples/**/*',
   ], browserSync.reload);
 });
 
