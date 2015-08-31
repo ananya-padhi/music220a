@@ -196,7 +196,7 @@
       valuesR[0] = 0.0;
 
       fftModule.ifft(valuesR, valuesR, waveformR, waveformI);
-      fftModule.ifftScale(waveformR, waveformI);
+      // fftModule.ifftScale(waveformR, waveformI);
 
       drawTimberGraph();
       drawWaveform();
