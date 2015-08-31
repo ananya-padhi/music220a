@@ -1,0 +1,25 @@
+{
+  "name": "music220a-landing",
+  "version": "0.0.3",
+  "description": "The landing (gh-pages) for Music 220A on GitHub.",
+  "author": "Hongchan Choi <hongchan.choi@gmail.com>",
+  "devDependencies": {
+    "browser-sync": "^2.8.2",
+    "del": "^1.2.0",
+    "gulp": "^3.9.0",
+    "gulp-concat": "^2.6.0",
+    "gulp-cssmin": "^0.1.7",
+    "gulp-gh-pages": "^0.5.2",
+    "gulp-load-plugins": "^0.10.0",
+    "gulp-uglify": "^1.2.0",
+    "run-sequence": "^1.1.2"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/ccrma/music220a.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ccrma/music220a/issues"
+  },
+  "license": "MIT"
+}
