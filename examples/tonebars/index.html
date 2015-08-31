@@ -18,6 +18,7 @@
 
     <p>Drag to change the tone by changing the magnitude of each sine wave.</p>
 
+    <paper-button raised onclick="setPreset(sine)">SINE</paper-button>
     <paper-button raised onclick="setPreset(square)">SQUARE</paper-button>
     <paper-button raised onclick="setPreset(sawtooth)">SAWTOOTH</paper-button>
 
@@ -56,8 +57,14 @@
     // AudioGraph.
     var context, osc;
 
-
     // Presets.
+    var sine = [
+      1.0, 0, 0, 0, 
+      0, 0, 0, 0, 
+      0, 0, 0, 0, 
+      0, 0, 0, 0
+    ];
+
     var square = [
       -0.7458609973, 0, -0.4045956496, 0,
       -0.003124921564,
@@ -158,7 +165,10 @@
       ctxWaveform.moveTo(0, yOrigin);
       for (i = 0; i < waveformR.length * 0.5; i++) {
         var amp = waveformR[i] * 0.5;
-        ctxWaveform.lineTo(i * xUnit, (1 - amp) * yOrigin);
+        if (i === 0)
+          ctxWaveform.moveTo(0, (1 - amp) * yOrigin);
+        else
+          ctxWaveform.lineTo(i * xUnit, (1 - amp) * yOrigin);
       }
       ctxWaveform.stroke();
     }
