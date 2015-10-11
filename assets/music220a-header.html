@@ -7,6 +7,9 @@
 <link rel="import" href="../bower_components/paper-button/paper-button.html">
 <link rel="import" href="../bower_components/paper-icon-button/paper-icon-button.html">
 
+<script src="../bower_components/prism/prism.js"></script>
+<link href="../bower_components/prism/themes/prism.css" rel="stylesheet" />
+
 <style is="custom-style">
 body {
   padding: 0;
@@ -14,20 +17,6 @@ body {
   font-family: 'Roboto', 'Noto', sans-serif;
   color: #263238;
   -webkit-font-smoothing: antialiased;
-}
-
-code {
-  font-family: 'Roboto Mono', 'Consolas', 'Menlo', monospace;
-  font-size: 0.85em;
-  -webkit-font-smoothing: antialiased;
-}
-
-pre {
-  display: block;
-  margin: 2em auto;
-  padding: 1.5em 1em;
-  border-radius: 5px;
-  background-color: #ECEFF1;
 }
 
 h1, h2, h3, h4 {
@@ -40,7 +29,7 @@ h1, h2, h3, h4 {
 }
 
 h1 {
-  font-size: 48px;
+  font-size: 3em;
   font-weight: 300;
   letter-spacing: -.044em;
   line-height: 56px;
@@ -48,7 +37,7 @@ h1 {
 
 h2 {
   text-transform: uppercase;
-  font-size: 28px;
+  font-size: 2em;
   font-weight: 600;
   letter-spacing: -.026em;
   line-height: 50px;
@@ -56,12 +45,40 @@ h2 {
 }
 
 h3 {
+  font-size: 1.5em;
   margin-top: 2em; 
 }
 
 p {
-  font-size: 0.95em;
+  font-size: 0.9em;
   line-height: 1.6em;
+}
+
+p > code {
+  font-size: 1.2em;
+  color: #DD4A68;
+  background-color: #f5f2f0;
+  padding: 0.2em 0.4em 0.3em;
+  border-radius: 0.2em;
+}
+
+code[class*="language-"], 
+pre[class*="language-"] {
+  line-height: 1.45em;
+  font-size: 0.9em;
+}
+
+:not(pre) > code[class*="language-"], 
+pre[class*="language-"] {
+  border-radius: 0.3em;
+}
+
+.token.operator, 
+.token.entity, 
+.token.url, 
+.language-css .token.string, 
+.style .token.string {
+  background: none;
 }
 
 #btn-code-change {

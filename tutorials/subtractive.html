@@ -4,14 +4,11 @@
 <head>
   <title>Tutorial - Subtractive Synthesis | Music220A</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-capable" content="yes">
   <script src="../bower_components/webcomponentsjs/webcomponents-lite.min.js"></script>
   <link rel="import" href="../assets/music220a-header.html">
 </head>
 
 <body>
-
   <paper-button id="btn-code-change" toggles raised>
     <span id="btn-label"></span>
   </paper-button>
@@ -23,50 +20,77 @@
 
     <p>Subtractive synthesis and filters are some of the fundamental building blocks of sound design –
 computer musicians use them in almost every piece of music they create. In this lab, we will walk
-through three examples of how you might use filters in ChucK.</p>
+through one example of how you might use filters in ChucK and Web Audio API.</p>
 
-    <ul>
-      <li>Example 1: simulating ocean waves</li>
-      <li>Example 2: filtering audio files</li>
-      <li>Example 3: chip tunes</li>
-    </ul>
-
-    <p>In each example, we follow our general template of the ‘clip’ – that each of these processes can be
+    <p class="inst-chuck">In this example, we follow our general template of the ‘clip’ – that each of these processes can be
 predefined to ‘live’ in ChucK for a certain period of time, in a very controlled manner, using spork.</p>
 
-    <h3>Example 1 - Simulating Ocean Waves</h3>
+    <p class="inst-webaudio">In this example, we follow our general template of the ‘clip’ – that each of these processes can be
+predefined to ‘live’ in the web audio thread for a certain period of time, in a very controlled manner.</p>
+
+    <h3>Example - Simulating Ocean Waves</h3>
 
     <p>Waves are a noisy sound, with higher frequencies being more prominent during the crash of the waves,
 and lower frequencies being more prominent at the waves’ lowest point. Here, we will simulate them by
-using noise as an input to one of the filters that ChucK has in its arsenal, and sweeping the cutoff of the
+using noise as an input to one of the filters that ChucK and Web Audio API have in its arsenal, and sweeping the cutoff of the
 filter at the rate at which waves typically roll and crash.</p>
 
-    <p>First, we define our ‘clip’ function, connect some noise to a filter, and then to the dac. While we could
-use any of the filters that ChucK has in its arsenal (LPF, HPF, and more), we choose ResonZ as it has a
-constant gain at the true peak of the filter and thus is more predictable than some other filters.</p>
+    <p class="inst-webaudio">Before jumping into our subtractive synthesis project,
+    we need to set up some utilities to simplify and speed up the work. Converting
+    MIDI pitch to frequency and creating a noise sample buffer will come in handy
+    later.</p>
 
     <iron-pages class="code-view">
       <div>
-<pre><code>fun void clip(dur myDur) {
+<pre><code></code></pre>
+      </div>
+      <div>
+<pre><code class="language-js">// Convert MIDI pitch to frequency.
+function mtof(midiPitch) {
+  return 440.0 * Math.pow(2, (Math.floor(midiPitch) - 69) / 12.0);
+}
+
+// Create 1-second sample buffer for noise generation.
+function createNoiseBuffer(context) {
+  var buffer = context.createBuffer(1, context.sampleRate, context.sampleRate);
+  var channel = buffer.getChannelData(0);
+  for (var i = 0; i < channel.length; i++) {
+    channel[i] = Math.random();
+  }
+  return buffer;
+}
+</code></pre>
+      </div>
+    </iron-pages>
+
+    <p class="inst-chuck">First, we define our <code>clip</code> function, connect some noise to a filter, and then to the dac. While we could
+use any of the filters that ChucK has in its arsenal (LPF, HPF, and more), we choose ResonZ as it has a
+constant gain at the true peak of the filter and thus is more predictable than some other filters.</p>
+
+    <p class="inst-webaudio">First, we define our <code>clip</code> function, connect some noise to a filter, and the to the destination. 
+    Here we choose the biquad filter as it is a resonant low pass filter by default.</p>
+
+    <iron-pages class="code-view">
+      <div>
+<pre><code class="language-js">fun void clip(dur myDur) {
 
   // noise generator, resonator filter, dac (audio output)
   Noise n => ResonZ f => dac;
 </code></pre>
       </div>
       <div>
-<pre><code>function clip (context, duration) {
-
+<pre><code class="language-js">function clip(context, noiseBuffer, duration) {
   // Create Noise generator and Lowpass resonant filter.
-  var noise = context.createNoise();
-  var lpf = context.createBiquadFilter();
-  var amp = context.createGain();
+  var noise = context.createBufferSource(),
+      lpf = context.createBiquadFilter();
 
-  // Connect them to the audio output.
-  noise.to(lpf).to(amp).to(cotext.DAC);
+  // Setup sample buffer Connect them to the audio output.
+  noise.buffer = noiseBuffer;
+  noise.loop = true;
+  noise.to(lpf).to(context.destination);
 </code></pre>
       </div>
     </iron-pages>
-
 
     <p>Then, we set the parameters for our filter. Filter Q determines how “sharp” to make the resonance of the
     filter – this is a value to play with in designing your ocean waves. In the line following, we set the gain
@@ -74,7 +98,7 @@ constant gain at the true peak of the filter and thus is more predictable than s
 
     <iron-pages class="code-view">
       <div>
-<pre><code>  // set filter Q (how sharp to make resonance)
+<pre><code class="language-js">  // set filter Q (how sharp to make resonance)
   1 => f.Q;
 
   // set filter gain
@@ -82,23 +106,25 @@ constant gain at the true peak of the filter and thus is more predictable than s
 </code></pre>
       </div>
       <div>
-<pre><code>  // set filter Q (how sharp to make resonance)
+<pre><code class="language-js">  // set filter Q (how sharp to make resonance)
   lpf.Q.value = 1.0;
 
   // set filter gain
-  amp.gain.value = .25;
+  lpf.gain.value = .25;
 </code></pre>
       </div>
     </iron-pages>
 
-    <p>Next is to sweep the resonant frequency of the filter, done in the while() loop below. By sweeping the
+    <p class="inst-chuck">Next is to sweep the resonant frequency of the filter, done in the while() loop below. By sweeping the
     resonant frequency, we oscillate between hearing mostly low and then mostly high frequencies. Note
     some lines in the middle of the following code serve as ‘bookkeeping’ for how long the function should
     actually live for when eventually run.</p>
 
+    <p class="inst-webaudio">Next is to sweep the resonant frequency of the filter, done with modulating frequency parameter with the other oscillator (commonly known as LFO, low frequency oscillator) below. By sweeping the resonant frequency, we oscillate between hearing mostly low and then mostly high frequencies.</p>
+
     <iron-pages class="code-view">
       <div>
-<pre><code>  // our variable to help smoothly sweep resonant frequency
+<pre><code class="language-js">  // our variable to help smoothly sweep resonant frequency
   0.0 => float t;
   
   //taking care of duration
@@ -121,44 +147,145 @@ constant gain at the true peak of the filter and thus is more predictable than s
 </code></pre>
       </div>
       <div>
-<pre><code>  // LFO and the depth gain for sweeping the cutoff frequency.
-  var lfo = context.createOscillator();
-  var depth = context.createGain();
+<pre><code class="language-js">  // LFO and the depth gain for sweeping the cutoff frequency.
+  var lfo = context.createOscillator(),
+      depth = context.createGain();
 
   // Connect the output of LFO to the frequency AudioParam in BiquadFilter.
-  // This will start the internal modulation.
+  // This connection ensures the internal sample-accurate modulation.
   lfo.to(depth).to(lpf.frequency);
-
-  // This will effectively modulate the cutoff frequency between 100 ~ 3100Hz.
   lfo.frequency.value = 35;
-  depth.gain.value = 1500;
-  lpf.frequency.value = 100;
 
-  // Start producing audio samples.
-  noise.start();
+  // This will effectively modulates the cutoff frequency between 100Hz ~ 3100Hz.
+  lpf.frequency.value = 1600; 
+  depth.gain.value = 1500;
+
+  // Start oscillators.
+  var now = context.currentTime;
+  lfo.start(now);
+  noise.start(now + duration);
+
+  // Print out start/end time.
+  console.log('clip start at: ' + now);
+  console.log('clip end at: ' + (now + duration));
 }
 </code></pre>
       </div>
     </iron-pages>
 
-  </div>
+  <p class="inst-chuck">The bit of math above in the first line of the 
+    <code>while(true)</code> loop gets the values of the frequencies that we are
+sweeping into a desired frequency range. The middle section of the code,
+<code>(1+Math.sin(t))/2</code>, outputs values between 0 and 1, and oscillates through these
+values at a rate determined both by t and how quickly time is advancing. The
+rest of the numbers on the scale the values into a reasonable frequency range
+for the effect we want.</p>
+  <p class="inst-chuck">If it is more intuitive for you to work in MIDI numbers
+than in raw frequency values, you could substitute that line with either of the
+below. Note that the function <code>Std.mtof</code> from the Standard library in ChucK maps
+midi values to frequency values. (Our filter will only accept frequencies, thus
+if we want to conceptualize our work in pitches, we must translate our pitch
+values to frequencies by means of the <code>Std.mtof</code> function.)
+  </p>
 
+  <p class="inst-webaudio">In order to implement the modulation on the cutoff
+  frequency of the filter, you can direct the output of LFO into it by calling
+  <code>.connect()</code> method with the <code>frequency</code> parameter as an
+  argument. The setter for the frequency value defines the base value of modulation.
+  The depth value here effectively renders the modulation into the range of 100Hz ~ 3100Hz
+  by expanding the range of modulation by 1500.</p>
+  <p class="inst-webaudio">If it is more intuitive for you to work in MIDI numbers
+than in raw frequency values, you could replace the part that makes connections and
+specifies modulation parameters. Note that now <code>detune</code> is used instead
+of <code>frequency</code> parameter for the modulation. It is more sensible to use
+<code>detune</code> when you need to work with musical pitch instead of frequency.
+Use <code>mtof()</code> method to convert MIDI pitch into frequency.</p>
+
+  <iron-pages class="code-view">
+    <div>
+<pre><code class="language-js">  // Set the range of modulation using MIDI pitch.
+  24 + (1 + Math.sin(t)) / 2 * 48 => Std.mtof => f.freq;
+  
+  // Same effect as the line above.
+  Std.mtof(24 + (1 + Math.sin(t)) / 2 * 48) => f.freq;
+</code></pre>
+    </div>
+    <div>
+<pre><code class="language-js">  // Connect the output of LFO to the detune of BiquadFilter.
+  lfo.to(depth).to(lpf.detune);
+  lfo.frequency.value = 35;
+
+  // Set the center of modulation by MIDI pitch.
+  // Set the modulation range of 4 octaves in cents(-2400 ~ 2400). 
+  lpf.frequency.value = mtof(48); 
+  depth.gain.value = 2400;
+</code></pre>
+    </div>
+  </iron-pages>
+
+  <p>Finally, we finish the code we need to call and run the function.</p>
+
+  <iron-pages class="code-view">
+    <div>
+<pre><code class="language-js">// TIME 0, start the clip in independent shred.
+spork ~clip(10::second);
+
+// Advance time so the clip can play.
+10::second => now; 
+
+// The last step in this program is this print statement.
+<<<"program end at", now/second, "seconds">>>;
+</code></pre>
+    </div>
+    <div>
+<pre><code class="language-js">// Create an AudioContext to initiate the audio engine.
+var context = new AudioContext();
+
+// Call |clip| with a noise buffer and 10 seconds of duration.
+clip(context, createNoiseBuffer(), 10.0);
+</code></pre>
+    </div>
+  </iron-pages>
+
+  <p class="inst-chuck">Were you able to hear the sound of wave? The complete code can be found <a>here</a>.
+  Check it out!</p>
+
+  <p class="inst-webaudio">Are you finished? The live demo of this tutorial can
+  be found <a>here</a>. Go and check it out!</p>
+
+  </div>
 <script>
 window.addEventListener('WebComponentsReady', function () {
 
   var btnCodeChange = document.getElementById('btn-code-change');
   var btnLabel = document.getElementById('btn-label');
+
   var codeViews = document.getElementsByClassName('code-view');
+  var instChuck = document.getElementsByClassName('inst-chuck');
+  var instWebAudio = document.getElementsByClassName('inst-webaudio');
 
   function changeCode() {
     if (btnLabel.textContent === 'TO WEB AUDIO') {
       for (var i = 0; i < codeViews.length; i++)
-        codeViews[i].select(1)  
-      btnLabel.textContent = 'TO CHUCK';
+        codeViews[i].select(1);
+      
+      for (i = 0; i < instChuck.length; i++)
+        instChuck[i].style.display = 'none';
 
+      for (i = 0; i < instWebAudio.length; i++)  
+        instWebAudio[i].style.display = 'block';
+      
+      btnLabel.textContent = 'TO CHUCK';
     } else {
       for (var i = 0; i < codeViews.length; i++)
-        codeViews[i].select(0)  
+        codeViews[i].select(0); 
+
+      for (i = 0; i < instChuck.length; i++)
+        instChuck[i].style.display = 'block';
+
+      for (i = 0; i < instWebAudio.length; i++)  
+        instWebAudio[i].style.display = 'none';
+
       btnLabel.textContent = 'TO WEB AUDIO';
     }
   }
@@ -169,8 +296,6 @@ window.addEventListener('WebComponentsReady', function () {
   changeCode();
 
 });
-
-
 </script>
 </body>
 
