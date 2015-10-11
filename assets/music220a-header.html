@@ -5,6 +5,7 @@
 <link rel="import" href="../bower_components/paper-styles/paper-styles.html">
 <link rel="import" href="../bower_components/paper-styles/color.html">
 <link rel="import" href="../bower_components/paper-button/paper-button.html">
+<link rel="import" href="../bower_components/paper-dialog/paper-dialog.html">
 <link rel="import" href="../bower_components/paper-icon-button/paper-icon-button.html">
 
 <script src="../bower_components/prism/prism.js"></script>
@@ -81,13 +82,27 @@ pre[class*="language-"] {
   background: none;
 }
 
-#btn-code-change {
+paper-button {
   font-size: 0.8em;
+  color: var(--paper-light-blue-700);
+  --paper-button-flat-focus-color: var(--paper-light-blue-50);
+  background: #fff;
+}
+
+paper-dialog {
+  font-size: 1.0em;
+}
+
+#btn-code-change {
   position: fixed;
   top: 16px;
   right: 16px;
-  color: var(--paper-light-blue-700);
-  --paper-button-flat-focus-color: var(--paper-light-blue-50);
+}
+
+#btn-about {
+  position: fixed;
+  bottom: 16px;
+  right: 16px; 
 }
 
 #btn-code-change:hover {
@@ -97,5 +112,14 @@ pre[class*="language-"] {
 .container {
   width: 800px;
   margin: 2em auto;
+}
+
+.note-label {
+  display: block;
+  margin: 1em 0;
+  font-size: 0.75em;
+  padding: 0.75em;
+  background-color: #F7E6E6;
+  border-radius: 0.5em;
 }
 </style>
