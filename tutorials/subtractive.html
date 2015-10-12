@@ -66,7 +66,7 @@ function createNoiseBuffer(context) {
   var buffer = context.createBuffer(1, context.sampleRate, context.sampleRate);
   var channel = buffer.getChannelData(0);
   for (var i = 0; i < channel.length; i++) {
-    channel[i] = Math.random();
+    channel[i] = 2 * Math.random() - 1;
   }
   return buffer;
 }
@@ -235,7 +235,7 @@ predictable than some other filters.</p>
     <div>
 <pre><code class="language-js">  // Connect the output of LFO to the detune of BiquadFilter.
   lfo.to(depth).to(lpf.detune);
-  lfo.frequency.value = 35;
+  lfo.frequency.value = 0.1;
 
   // Set the center of modulation by MIDI pitch.
   // Set the modulation range of 4 octaves in cents(-2400 ~ 2400). 
